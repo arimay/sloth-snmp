@@ -1,0 +1,213 @@
+= Sloth::Snmp
+
+Sloth::Snmp is yet another wrapper library for snmp.
+
+== Features
+
+* Handles SNMP asynchronously.
+* By referring to the YAML file generated from the MIB file, you can operate without describing raw OID.
+
+== Installation
+
+Add this line to your application's Gemfile:
+
+[source,ruby]
+----
+gem 'sloth/snmp'
+----
+
+And then execute:
+
+    $ bundle install
+
+Or install it yourself as:
+
+    $ gem install sloth-snmp
+    or
+    $ gem install -l sloth-snmp-x.x.x.gem
+
+== Usage
+
+=== New
+[source,ruby]
+----
+require  "sloth/snmp"
+
+snmp  =  Sloth::Snmp.new
+snmp  =  Sloth::Snmp.new( bind: 1161 )
+snmp  =  Sloth::Snmp.new( bind: "127.0.0.1" )
+snmp  =  Sloth::Snmp.new( bind: "192.168.0.1:1161" )
+snmp  =  Sloth::Snmp.new( mibs: "RS-232-MIB.yaml" )
+snmp  =  Sloth::Snmp.new( mibs: "spec/sloth/RFC1414-MIB.yaml" )
+----
+
+=== Get
+
+[source,ruby]
+----
+require  "sloth/snmp"
+
+snmp  =  Sloth::Snmp.new
+peer  =  "127.0.0.1"
+topics  =  [ "sysDescr.0", "sysUpTime.0", "sysName.0" ],
+tuples  =  snmp.get( peer, topics )
+tuples.each do |oid, tuple|
+  p  tuple
+end
+----
+
+=== Set
+
+[source,ruby]
+----
+require  "sloth/snmp"
+
+snmp  =  Sloth::Snmp.new
+peer  =  "127.0.0.1"
+tuple  =  { topic: "sysName.0", type: SNMP::OctetString, value: Time.now.to_s },
+snmp.set( peer, tuple )
+
+tuples  =  snmp.get( peer, tuple[:topic] )
+tuples.each do |oid, tuple|
+  p  tuple
+end
+----
+
+=== Walk
+
+[source,ruby]
+----
+require  "sloth/snmp"
+
+snmp  =  Sloth::Snmp.new
+peer  =  "127.0.0.1"
+topic  =  "internet"
+tuples  =  snmp.walk( peer, topic )
+tuples.each do |oid, tuple|
+  p  tuple
+end
+----
+
+=== Trap
+
+[source,ruby]
+----
+require  "sloth/snmp"
+
+snmp  =  Sloth::Snmp.new( bind: 1162 )
+snmp.trap( "snmpInTraps", "snmpOutTraps" ) do |trapname, source_ip, tuples|
+  p [:trapname, trapname]
+  p [:source_ip, source_ip]
+  tuples.each do |oid, tuple|
+    p  tuple
+  end
+end
+
+sleep
+----
+
+== Reference
+
+=== Create a new Sloth::Snmp.
+
+[source,ruby]
+----
+Sloth::Snmp.new( mibs: nil, bind: nil, rocommunity: "public", rwcommunity: "private" )
+----
+
+* Result:
+  - Sloth::Snmp object.
+
+* Parameter:
+  ** mibs:  Additional MIB file path, or array of the paths. (default: nil)
+  ** bind:  Bind host and port for trap. (default: "0.0.0.0:162")
+  ** rocommunity:  Community string for Read Only. (default: "public")
+  ** rwcommunity:  Community string for Read/Write. (default: "private")
+
+=== SNMP Get.
+
+[source,ruby]
+----
+Sloth::Snmp#get( peer, topics, community: nil, bindto: nil, device: nil )
+----
+
+* Result:
+  * Hash of key=>oid, value=>{name, value}.
+
+* Parameter:
+  ** peer:  Target IP address and port. (default port: 162)
+  ** topics:  Topic(s) for SNMP Get Request.
+  ** community:  Community string. (default: nil)
+  ** bindto:  Interface address. (default: nil)
+  ** device:  Interface name. (default: nil)
+
+=== SNMP Set.
+
+[source,ruby]
+----
+Sloth::Snmp#set( peer, topics, community: nil, bindto: nil, device: nil )
+----
+
+* Result:
+  * Hash of key=>oid, value=>{name, value}.
+
+* Parameter:
+  ** peer:  Target IP address and port. (default port: 162)
+  ** tuple:  Hash of topic, type, value for SNMP Set Request.
+  ** community:  Community string. (default: nil)
+  ** bindto:  Interface address. (default: nil)
+  ** device:  Interface name. (default: nil)
+
+=== SNMP Walk.
+
+[source,ruby]
+----
+Sloth::Snmp#walk( target, topic, port: 162, community: "public", bindto: nil, device: nil )
+----
+
+* Result:
+  ** Hash of key=>oid, value=>{name, value}.
+
+* Parameter:
+  ** peer:  Target IP address and port. (default port: 162)
+  ** topic:  Topic for SNMP Get Next.
+  ** community:  Community string. (default: nil)
+  ** bindto:  Interface address. (default: nil)
+  ** device:  Interface name. (default: nil)
+
+=== SNMP Trap.
+
+[source,ruby]
+----
+Sloth::Snmp#trap( *topics, &block )
+----
+
+* Result:
+  ** nil.
+
+* Parameter:
+  ** topics:  The topic(s) that enables trap monitoring.
+  ** block:  Callback action.
+
+=== SNMP Untrap.
+
+[source,ruby]
+----
+Sloth::Snmp#untrap( *topics )
+----
+
+* Result:
+  ** nil.
+
+* Parameter:
+  ** topics:  The topic(s) that disables trap monitoring.
+
+== Contributing
+
+Bug reports and pull requests are welcome on GitHub at https://github.com/arimay/sloth-snmp.
+
+== License
+
+The gem is available as open source under the terms of the http://opensource.org/licenses/MIT[MIT License].
+
+Copyright (c) ARIMA Yasuhiro <arima.yasuhiro@gmail.com>

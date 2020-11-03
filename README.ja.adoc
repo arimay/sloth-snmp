@@ -1,0 +1,213 @@
+= Sloth::Snmp
+
+Sloth::Snmp はさらにもうひとつの SNMP ラッパーライブラリ.
+
+== 特徴
+
+* 非同期で SNMP を扱う.
+* MIBファイルから生成したYAMLファイルを参照することで、生のOIDを記述することなく操作できる.
+
+== 導入
+
+アプリの Gemfile にこの行を追加
+
+[source,ruby]
+----
+gem 'sloth/snmp'
+----
+
+それから実行
+
+    $ bundle install
+
+または次のように手動で導入
+
+    $ gem install sloth-snmp
+    or
+    $ gem install -l sloth-snmp-x.x.x.gem
+
+== 使い方
+
+=== 新規
+[source,ruby]
+----
+require  "sloth/snmp"
+
+snmp  =  Sloth::Snmp.new
+snmp  =  Sloth::Snmp.new( bind: 1161 )
+snmp  =  Sloth::Snmp.new( bind: "127.0.0.1" )
+snmp  =  Sloth::Snmp.new( bind: "192.168.0.1:1161" )
+snmp  =  Sloth::Snmp.new( mibs: "RS-232-MIB.yaml" )
+snmp  =  Sloth::Snmp.new( mibs: "spec/sloth/RFC1414-MIB.yaml" )
+----
+
+=== 取得
+
+[source,ruby]
+----
+require  "sloth/snmp"
+
+snmp  =  Sloth::Snmp.new
+peer  =  "127.0.0.1"
+topics  =  [ "sysDescr.0", "sysUpTime.0", "sysName.0" ],
+tuples  =  snmp.get( peer, topics )
+tuples.each do |oid, tuple|
+  p  tuple
+end
+----
+
+=== 更新
+
+[source,ruby]
+----
+require  "sloth/snmp"
+
+snmp  =  Sloth::Snmp.new
+peer  =  "127.0.0.1"
+tuple  =  { topic: "sysName.0", type: SNMP::OctetString, value: Time.now.to_s },
+snmp.set( peer, tuple )
+
+tuples  =  snmp.get( peer, tuple[:topic] )
+tuples.each do |oid, tuple|
+  p  tuple
+end
+----
+
+=== 巡回
+
+[source,ruby]
+----
+require  "sloth/snmp"
+
+snmp  =  Sloth::Snmp.new
+peer  =  "127.0.0.1"
+topic  =  "internet"
+tuples  =  snmp.walk( peer, topic )
+tuples.each do |oid, tuple|
+  p  tuple
+end
+----
+
+=== トラップ
+
+[source,ruby]
+----
+require  "sloth/snmp"
+
+snmp  =  Sloth::Snmp.new( bind: 1162 )
+snmp.trap( "snmpInTraps", "snmpOutTraps" ) do |trapname, source_ip, tuples|
+  p [:trapname, trapname]
+  p [:source_ip, source_ip]
+  tuples.each do |oid, tuple|
+    p  tuple
+  end
+end
+
+sleep
+----
+
+== リファレンス
+
+=== 新たな Sloth::Snmp を作成する.
+
+[source,ruby]
+----
+Sloth::Snmp.new( mibs: nil, bind: nil, rocommunity: "public", rwcommunity: "private" )
+----
+
+* Result:
+  ** Sloth::Snmp オブジェクト.
+
+* Parameter:
+  ** mibs:  追加 MIB ファイルパスの文字列. またはその配列. (default: nil)
+  ** bind:  トラップ用のバインドホストとポート. (default: "0.0.0.0:162")
+  ** rocommunity:  読み取り用コミュニティ文字列. (default: "public")
+  ** rwcommunity:  読み書き用コミュニティ文字列. (default: "private")
+
+=== SNMP Get.
+
+[source,ruby]
+----
+Sloth::Snmp#get( peer, topics, community: nil, bindto: nil, device: nil )
+----
+
+* Result:
+  ** hash of key=>oid, value=>{name, value}.
+
+* Parameter:
+  ** peer:  宛先IPアドレスとポート. (default port: 162)
+  ** topics:  SNMP Get Request 用のトピック.
+  ** community:  コミュニティ文字列. (default: nil)
+  ** bindto:  インターフェースアドレス. (default: nil)
+  ** device:  インターフェース名称. (default: nil)
+
+=== SNMP Set.
+
+[source,ruby]
+----
+Sloth::Snmp#set( peer, topics, community: nil, bindto: nil, device: nil )
+----
+
+* Result:
+  ** hash of key=>oid, value=>{name, value}.
+
+* Parameter:
+  ** peer:  宛先IPアドレスとポート. (default port: 162)
+  ** tuple:  SNMP Set Request 用のトピック、型、値のハッシュ.
+  ** community:  コミュニティ文字列. (default: nil)
+  ** bindto:  インターフェースアドレス. (default: nil)
+  ** device:  インターフェース名称. (default: nil)
+
+=== SNMP Walk.
+
+[source,ruby]
+----
+Sloth::Snmp#walk( peer, topic, port: 162, community: "public", bindto: nil, device: nil )
+----
+
+* Result:
+  ** hash of key=>oid, value=>{name, value}.
+
+* Parameter:
+  ** peer:  宛先IPアドレスとポート. (default port: 162)
+  ** topic:  SNMP Get Next 用のトピック.
+  ** community:  コミュニティ文字列. (default: nil)
+  ** bindto:  インターフェースアドレス. (default: nil)
+  ** device:  インターフェース名称. (default: nil)
+
+=== SNMP Trap.
+
+[source,ruby]
+----
+Sloth::Snmp#trap( *topics, &block )
+----
+
+* Result:
+  ** nil.
+
+* Parameter:
+  ** topics:  トラップを有効化するトピック.
+  ** block:  コールバック動作.
+
+=== SNMP Untrap.
+
+[source,ruby]
+----
+Sloth::Snmp#untrap( *topics )
+----
+
+* Result:
+  ** nil.
+
+* Parameter:
+  ** topics:  トラップの監視を無効化するトピック.
+
+== 貢献
+
+不具合報告とプルリクエストは GitHub https://github.com/arimay/sloth-snmp まで. 
+
+== ライセンス
+
+この Gem は、 http://opensource.org/licenses/MIT[MITライセンス] の条件に基づいてオープンソースとして入手できる.
+
+Copyright (c) ARIMA Yasuhiro <arima.yasuhiro@gmail.com>
