@@ -29,6 +29,7 @@ Or install it yourself as:
 == Usage
 
 === New
+
 [source,ruby]
 ----
 require  "sloth/snmp"

@@ -29,6 +29,7 @@ gem 'sloth/snmp'
 == 使い方
 
 === 新規
+
 [source,ruby]
 ----
 require  "sloth/snmp"
