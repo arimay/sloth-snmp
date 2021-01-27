@@ -7,8 +7,7 @@ module Sloth
 
     class UDPTransportExt < ::SNMP::UDPTransport
       def initialize( address_family, bindto: nil, device: nil )
-        super
-        @socket  =  UDPSocket.open( address_family )
+        super  address_family
         if  bindto
           host, port  =  bindto.split(':')    rescue nil
           @socket.bind( host, port.to_i )
