@@ -15,16 +15,15 @@ peer  =  ARGV.shift  ||  "127.0.0.1:161"
 
 [
   { topic: "sysName.0", type: SNMP::OctetString, value: Time.now.to_s },
-].each do |tuple|
-  p [:set, tuple]
-  pp Snmp.set( peer, tuple, **options )
+].each do |item|
+  p [:set, item]
+  pp Snmp.set( peer, item, **options )
 
-# topics  =  [tuple[:topic]]
-  topics  =   tuple[:topic]
-  p [:get, topics]
-  tuples  =  Snmp.get( peer, topics, **options )
-  tuples.each do |_oid, tuple_|
-    p  tuple_
+  topic  =  item[:topic]
+  p [:get, topic]
+  tuples  =  Snmp.get( peer, topic, **options )
+  tuples.each do |_oid, tuple|
+    p  tuple
   end
   puts
 end

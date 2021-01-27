@@ -5,8 +5,8 @@
 
 require  "sloth/snmp"
 
-config  =  {}
 mibpath  =  ARGV.shift
+config  =  {}
 if  mibpath
   config.merge!( mibs: mibpath )
 end
